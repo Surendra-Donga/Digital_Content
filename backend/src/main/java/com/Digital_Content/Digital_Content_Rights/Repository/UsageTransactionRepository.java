@@ -1,0 +1,13 @@
+package com.Digital_Content.Digital_Content_Rights.Repositorys;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.Digital_Content.Digital_Content_Rights.Entity.UsageTransaction;
+import com.Digital_Content.Digital_Content_Rights.Enum.TransactionStatus;
+
+public interface UsageTransactionRepository extends JpaRepository<UsageTransaction, Integer> {
+
+    List<UsageTransaction> findByTransactionStatus(TransactionStatus status);
+}
