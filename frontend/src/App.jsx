@@ -11,7 +11,13 @@ import './App.css'
 export const AuthContext = createContext()
 
 function App() {
-  const [userRole, setUserRole] = useState('ADMIN') // Simulated role
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem('userRole') || 'ADMIN'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('userRole', userRole)
+  }, [userRole])
 
   return (
     <AuthContext.Provider value={{ userRole, setUserRole }}>
