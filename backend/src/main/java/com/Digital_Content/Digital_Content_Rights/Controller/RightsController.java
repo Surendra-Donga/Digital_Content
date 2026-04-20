@@ -1,8 +1,9 @@
 package com.Digital_Content.Digital_Content_Rights.Controller;
 
-import com.Digital_Content.Digital_Content_Rights.Entity.ContentRights;
-import com.Digital_Content.Digital_Content_Rights.Entity.RightsTransferHistory;
+import com.Digital_Content.Digital_Content_Rights.DTO.ContentRightsRequestDTO;
+import com.Digital_Content.Digital_Content_Rights.DTO.ContentRightsResponseDTO;
 import com.Digital_Content.Digital_Content_Rights.Service.RightsService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,23 +13,19 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rights")
+@CrossOrigin(origins = "*")
 public class RightsController {
 
     @Autowired
     private RightsService rightsService;
 
     @GetMapping("/content/{contentId}")
-    public ResponseEntity<List<ContentRights>> getRightsByContent(@PathVariable Integer contentId) {
+    public ResponseEntity<List<ContentRightsResponseDTO>> getRightsByContent(@PathVariable Integer contentId) {
         return ResponseEntity.ok(rightsService.getRightsByContent(contentId));
     }
 
-    @PostMapping("/assign")
-    public ResponseEntity<ContentRights> assignRights(@RequestBody ContentRights rights) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(rightsService.assignRights(rights));
-    }
-
-    @PostMapping("/transfer")
-    public ResponseEntity<RightsTransferHistory> transferRights(@RequestBody RightsTransferHistory history) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(rightsService.transferRights(history));
+    @PostMapping
+    public ResponseEntity<ContentRightsResponseDTO> assignRights(@Valid @RequestBody ContentRightsRequestDTO rightsDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(rightsService.assignRights(rightsDTO));
     }
 }

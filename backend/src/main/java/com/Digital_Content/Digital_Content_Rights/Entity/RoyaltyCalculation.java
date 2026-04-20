@@ -20,6 +20,10 @@ public class RoyaltyCalculation {
     @JoinColumn(name = "digital_content_id")
     private DigitalContent digitalContent;
 
+    @ManyToOne
+    @JoinColumn(name = "rights_owner_id")
+    private User rightsOwner;
+
     private BigDecimal totalRevenue;
 
     private BigDecimal royaltyPercentage;

@@ -1,6 +1,5 @@
 package com.Digital_Content.Digital_Content_Rights.DTO;
 
-import com.Digital_Content.Digital_Content_Rights.Enum.ContentStatus;
 import com.Digital_Content.Digital_Content_Rights.Enum.ContentType;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -8,9 +7,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class DigitalContentDTO {
-    private Integer id;
-
+public class DigitalContentRequestDTO {
     @NotBlank(message = "Title is required")
     @Size(min = 2, max = 255, message = "Title must be between 2 and 255 characters")
     private String title;
@@ -23,8 +20,6 @@ public class DigitalContentDTO {
 
     @PastOrPresent(message = "Published date cannot be in the future")
     private LocalDate publishedDate;
-
-    private ContentStatus contentStatus;
 
     @NotNull(message = "Creator ID is required")
     private Integer createdById;
