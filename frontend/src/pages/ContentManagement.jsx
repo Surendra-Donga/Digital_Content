@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { contentService, userService } from '../services/apiService'
+import { contentService, userService, contentRightsService } from '../services/apiService'
 import { formatDate } from '../utils/helpers'
 import './ContentManagement.css'
 
@@ -9,6 +9,9 @@ function ContentManagement() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [showRightsModal, setShowRightsModal] = useState(false)
+  const [selectedContentId, setSelectedContentId] = useState(null)
+  
   const [formData, setFormData] = useState({
     title: '',
     contentType: 'MUSIC',
@@ -16,7 +19,15 @@ function ContentManagement() {
     publishedDate: '',
     createdById: ''
   })
-  const [editingId, setEditingId] = useState(null)
+
+  const [rightsFormData, setRightsFormData] = useState({
+    digitalContentId: '',
+    rightsOwnerId: '',
+    ownershipPercentage: '',
+    rightsStartDate: new Date().toISOString().split('T')[0],
+    rightsEndDate: '',
+    rightsStatus: 'ACTIVE'
+  })
 
   useEffect(() => {
     loadData()
@@ -42,51 +53,67 @@ function ContentManagement() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      if (editingId) {
-        await contentService.updateContent(editingId, formData)
-      } else {
-        await contentService.createContent(formData)
-      }
+      await contentService.createDraft(formData)
       setFormData({ title: '', contentType: 'MUSIC', description: '', publishedDate: '', createdById: '' })
-      setEditingId(null)
       setShowModal(false)
       loadData()
     } catch (err) {
-      setError('Failed to save content')
-      console.error(err)
+      setError('Failed to create draft content')
     }
   }
 
-  const handleEdit = (item) => {
-    setFormData({
-      title: item.title,
-      contentType: item.contentType,
-      description: item.description,
-      publishedDate: item.publishedDate,
-      createdById: item.createdBy?.id
-    })
-    setEditingId(item.id)
-    setShowModal(true)
+  const handleRegister = async (id) => {
+    try {
+      await contentService.registerContent(id)
+      loadData()
+    } catch (err) {
+      setError('Failed to register content')
+    }
   }
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this content?')) {
-      try {
-        await contentService.deleteContent(id)
-        loadData()
-      } catch (err) {
-        setError('Failed to delete content')
-      }
+  const handleApprove = async (id) => {
+    try {
+      await contentService.approveContent(id)
+      loadData()
+    } catch (err) {
+      setError('Failed to approve content')
     }
+  }
+
+  const handleOpenRights = (contentId) => {
+    setSelectedContentId(contentId)
+    setRightsFormData(prev => ({ ...prev, digitalContentId: contentId }))
+    setShowRightsModal(true)
+  }
+
+  const handleRightsSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await contentRightsService.assignRights(rightsFormData)
+      setShowRightsModal(false)
+      setRightsFormData({
+        digitalContentId: '',
+        rightsOwnerId: '',
+        ownershipPercentage: '',
+        rightsStartDate: new Date().toISOString().split('T')[0],
+        rightsEndDate: '',
+        rightsStatus: 'ACTIVE'
+      })
+      alert('Rights assigned successfully!')
+    } catch (err) {
+      setError('Failed to assign rights')
+    }
+  }
+
+  const getCreatorName = (id) => {
+    const user = users.find(u => u.id === id)
+    return user ? user.name : 'Unknown'
   }
 
   if (loading) return <div className="container"><div className="loading">Loading content...</div></div>
@@ -95,7 +122,7 @@ function ContentManagement() {
     <div className="container">
       <div className="page-header">
         <h1>Content Management</h1>
-        <button onClick={() => { setFormData({ title: '', contentType: 'MUSIC', description: '', publishedDate: '', createdById: '' }); setEditingId(null); setShowModal(true) }}>+ Add Content</button>
+        <button onClick={() => setShowModal(true)}>+ Create Draft</button>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -109,7 +136,6 @@ function ContentManagement() {
                 <th>Type</th>
                 <th>Creator</th>
                 <th>Status</th>
-                <th>Published Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -118,13 +144,17 @@ function ContentManagement() {
                 <tr key={item.id}>
                   <td>{item.title}</td>
                   <td>{item.contentType}</td>
-                  <td>{item.createdBy?.name || 'N/A'}</td>
+                  <td>{getCreatorName(item.createdById)}</td>
                   <td><span className={`badge badge-${item.contentStatus?.toLowerCase()}`}>{item.contentStatus}</span></td>
-                  <td>{formatDate(item.publishedDate)}</td>
                   <td>
                     <div className="action-buttons">
-                      <button className="btn-edit" onClick={() => handleEdit(item)}>Edit</button>
-                      <button className="btn-delete" onClick={() => handleDelete(item.id)}>Delete</button>
+                      {item.contentStatus === 'DRAFT' && (
+                        <button className="btn-edit" onClick={() => handleRegister(item.id)}>Register</button>
+                      )}
+                      {item.contentStatus === 'REGISTERED' && (
+                        <button className="btn-approve" onClick={() => handleApprove(item.id)}>Approve</button>
+                      )}
+                      <button className="btn-rights" onClick={() => handleOpenRights(item.id)}>Manage Rights</button>
                     </div>
                   </td>
                 </tr>
@@ -139,7 +169,7 @@ function ContentManagement() {
         <div className="modal active">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>{editingId ? 'Edit Content' : 'Add New Content'}</h2>
+              <h2>Add New Draft</h2>
               <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -153,17 +183,7 @@ function ContentManagement() {
                   <option value="MUSIC">Music</option>
                   <option value="VIDEO">Video</option>
                   <option value="ARTICLE">Article</option>
-                  <option value="COURSE">Course</option>
-                  <option value="PODCAST">Podcast</option>
                 </select>
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea name="description" value={formData.description} onChange={handleInputChange} rows="4"></textarea>
-              </div>
-              <div className="form-group">
-                <label>Published Date</label>
-                <input type="date" name="publishedDate" value={formData.publishedDate} onChange={handleInputChange} />
               </div>
               <div className="form-group">
                 <label>Creator</label>
@@ -174,7 +194,38 @@ function ContentManagement() {
                   ))}
                 </select>
               </div>
-              <button type="submit" className="btn-submit">Save Content</button>
+              <button type="submit" className="btn-submit">Create Draft</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showRightsModal && (
+        <div className="modal active">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Assign Ownership Rights</h2>
+              <button className="close-btn" onClick={() => setShowRightsModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleRightsSubmit}>
+              <div className="form-group">
+                <label>Rights Owner</label>
+                <select name="rightsOwnerId" value={rightsFormData.rightsOwnerId} onChange={(e) => setRightsFormData({...rightsFormData, rightsOwnerId: e.target.value})} required>
+                  <option value="">Select Owner</option>
+                  {users.filter(u => u.role === 'CREATOR' || u.role === 'DISTRIBUTOR').map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Ownership Percentage (%)</label>
+                <input type="number" step="0.01" name="ownershipPercentage" value={rightsFormData.ownershipPercentage} onChange={(e) => setRightsFormData({...rightsFormData, ownershipPercentage: e.target.value})} required />
+              </div>
+              <div className="form-group">
+                <label>Start Date</label>
+                <input type="date" name="rightsStartDate" value={rightsFormData.rightsStartDate} onChange={(e) => setRightsFormData({...rightsFormData, rightsStartDate: e.target.value})} required />
+              </div>
+              <button type="submit" className="btn-submit">Save Rights</button>
             </form>
           </div>
         </div>

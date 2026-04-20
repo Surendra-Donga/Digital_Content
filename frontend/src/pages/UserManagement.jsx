@@ -14,7 +14,6 @@ function UserManagement() {
     organizationName: '',
     role: 'CREATOR'
   })
-  const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
     loadUsers()
@@ -28,7 +27,6 @@ function UserManagement() {
       setError(null)
     } catch (err) {
       setError('Failed to load users')
-      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -36,55 +34,19 @@ function UserManagement() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      if (editingId) {
-        await userService.updateUser(editingId, formData)
-        setError(null)
-      } else {
-        await userService.createUser(formData)
-        setError(null)
-      }
+      await userService.createUser(formData)
       setFormData({ name: '', email: '', organizationName: '', role: 'CREATOR' })
-      setEditingId(null)
       setShowModal(false)
       loadUsers()
     } catch (err) {
-      setError('Failed to save user')
-      console.error(err)
+      setError(err.response?.data?.message || 'Failed to save user')
     }
-  }
-
-  const handleEdit = (user) => {
-    setFormData(user)
-    setEditingId(user.id)
-    setShowModal(true)
-  }
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await userService.deleteUser(id)
-        loadUsers()
-        setError(null)
-      } catch (err) {
-        setError('Failed to delete user')
-        console.error(err)
-      }
-    }
-  }
-
-  const handleOpenModal = () => {
-    setFormData({ name: '', email: '', organizationName: '', role: 'CREATOR' })
-    setEditingId(null)
-    setShowModal(true)
   }
 
   if (loading) return <div className="container"><div className="loading">Loading users...</div></div>
@@ -93,7 +55,7 @@ function UserManagement() {
     <div className="container">
       <div className="page-header">
         <h1>User Management</h1>
-        <button onClick={handleOpenModal}>+ Add User</button>
+        <button onClick={() => setShowModal(true)}>+ Add User</button>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -108,7 +70,6 @@ function UserManagement() {
                 <th>Organization</th>
                 <th>Role</th>
                 <th>Created At</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -119,12 +80,6 @@ function UserManagement() {
                   <td>{user.organizationName || 'N/A'}</td>
                   <td><span className="badge">{user.role}</span></td>
                   <td>{formatDate(user.createdAt)}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-edit" onClick={() => handleEdit(user)}>Edit</button>
-                      <button className="btn-delete" onClick={() => handleDelete(user.id)}>Delete</button>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -137,7 +92,7 @@ function UserManagement() {
         <div className="modal active">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>{editingId ? 'Edit User' : 'Add New User'}</h2>
+              <h2>Add New User</h2>
               <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
