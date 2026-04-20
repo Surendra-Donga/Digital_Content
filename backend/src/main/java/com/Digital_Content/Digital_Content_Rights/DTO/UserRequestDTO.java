@@ -5,9 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
-public class UserDTO {
-    private Integer id;
-
+public class UserRequestDTO {
     @NotBlank(message = "Full name is required")
     @Size(min = 2, max = 255, message = "Name must be between 2 and 255 characters")
     @Pattern(regexp = "^[a-zA-Z\\s\\-'.]*$", message = "Name contains invalid characters")

@@ -1,6 +1,7 @@
 package com.Digital_Content.Digital_Content_Rights.Service;
 
-import com.Digital_Content.Digital_Content_Rights.DTO.DigitalContentDTO;
+import com.Digital_Content.Digital_Content_Rights.DTO.DigitalContentRequestDTO;
+import com.Digital_Content.Digital_Content_Rights.DTO.DigitalContentResponseDTO;
 import com.Digital_Content.Digital_Content_Rights.Entity.DigitalContent;
 import com.Digital_Content.Digital_Content_Rights.Entity.User;
 import com.Digital_Content.Digital_Content_Rights.Enum.ContentStatus;
@@ -23,50 +24,67 @@ public class ContentService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<DigitalContentDTO> getAllContent() {
+    public List<DigitalContentResponseDTO> getAllContent() {
         return contentRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public Optional<DigitalContentDTO> getContentById(Integer id) {
+    public Optional<DigitalContentResponseDTO> getContentById(Integer id) {
         return contentRepository.findById(id).map(this::convertToDTO);
     }
 
     @Transactional
-    public DigitalContentDTO registerContent(DigitalContentDTO contentDTO) {
-        DigitalContent content = new DigitalContent();
-        content.setTitle(contentDTO.getTitle());
-        content.setContentType(contentDTO.getContentType());
-        content.setDescription(contentDTO.getDescription());
-        content.setPublishedDate(contentDTO.getPublishedDate());
-        content.setContentStatus(ContentStatus.REGISTERED);
-        
-        User creator = userRepository.findById(contentDTO.getCreatedById())
-                .orElseThrow(() -> new RuntimeException("Creator not found"));
-        content.setCreatedBy(creator);
-        
-        DigitalContent savedContent = contentRepository.save(content);
-        return convertToDTO(savedContent);
+    public DigitalContentResponseDTO createDraft(DigitalContentRequestDTO contentDTO) {
+        DigitalContent content = convertToEntity(contentDTO);
+        content.setContentStatus(ContentStatus.DRAFT);
+        return convertToDTO(contentRepository.save(content));
     }
 
     @Transactional
-    public DigitalContentDTO approveContent(Integer id) {
+    public DigitalContentResponseDTO registerContent(Integer id) {
         DigitalContent content = contentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Content not found"));
-        content.setContentStatus(ContentStatus.ACTIVE);
-        DigitalContent savedContent = contentRepository.save(content);
-        return convertToDTO(savedContent);
+        if (content.getContentStatus() != ContentStatus.DRAFT) {
+            throw new RuntimeException("Only draft content can be registered");
+        }
+        content.setContentStatus(ContentStatus.REGISTERED);
+        return convertToDTO(contentRepository.save(content));
     }
 
-    private DigitalContentDTO convertToDTO(DigitalContent content) {
-        DigitalContentDTO dto = new DigitalContentDTO();
+    @Transactional
+    public DigitalContentResponseDTO approveContent(Integer id) {
+        DigitalContent content = contentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+        if (content.getContentStatus() != ContentStatus.REGISTERED) {
+            throw new RuntimeException("Only registered content can be approved");
+        }
+        content.setContentStatus(ContentStatus.ACTIVE);
+        return convertToDTO(contentRepository.save(content));
+    }
+
+    private DigitalContent convertToEntity(DigitalContentRequestDTO dto) {
+        DigitalContent content = new DigitalContent();
+        content.setTitle(dto.getTitle());
+        content.setContentType(dto.getContentType());
+        content.setDescription(dto.getDescription());
+        content.setPublishedDate(dto.getPublishedDate());
+        
+        User creator = userRepository.findById(dto.getCreatedById())
+                .orElseThrow(() -> new RuntimeException("Creator not found"));
+        content.setCreatedBy(creator);
+        return content;
+    }
+
+    private DigitalContentResponseDTO convertToDTO(DigitalContent content) {
+        DigitalContentResponseDTO dto = new DigitalContentResponseDTO();
         dto.setId(content.getId());
         dto.setTitle(content.getTitle());
         dto.setContentType(content.getContentType());
         dto.setDescription(content.getDescription());
         dto.setPublishedDate(content.getPublishedDate());
         dto.setContentStatus(content.getContentStatus());
+        dto.setCreatedAt(content.getCreatedAt());
         if (content.getCreatedBy() != null) {
             dto.setCreatedById(content.getCreatedBy().getId());
         }

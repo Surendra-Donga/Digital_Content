@@ -1,6 +1,7 @@
 package com.Digital_Content.Digital_Content_Rights.Service;
 
-import com.Digital_Content.Digital_Content_Rights.DTO.UsageTransactionDTO;
+import com.Digital_Content.Digital_Content_Rights.DTO.UsageTransactionRequestDTO;
+import com.Digital_Content.Digital_Content_Rights.DTO.UsageTransactionResponseDTO;
 import com.Digital_Content.Digital_Content_Rights.Entity.DigitalContent;
 import com.Digital_Content.Digital_Content_Rights.Entity.User;
 import com.Digital_Content.Digital_Content_Rights.Entity.UsageTransaction;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +30,7 @@ public class UsageService {
     private UserRepository userRepository;
 
     @Transactional
-    public UsageTransactionDTO recordUsage(UsageTransactionDTO dto) {
+    public UsageTransactionResponseDTO recordUsage(UsageTransactionRequestDTO dto) {
         UsageTransaction transaction = new UsageTransaction();
         
         DigitalContent content = contentRepository.findById(dto.getDigitalContentId())
@@ -41,21 +43,21 @@ public class UsageService {
         transaction.setUsageType(dto.getUsageType());
         transaction.setUsageCount(dto.getUsageCount());
         transaction.setRevenueGenerated(dto.getRevenueGenerated());
-        transaction.setTransactionDate(dto.getTransactionDate());
+        transaction.setTransactionDate(dto.getTransactionDate() != null ? dto.getTransactionDate() : LocalDateTime.now());
         transaction.setTransactionStatus(TransactionStatus.RECORDED);
         
         UsageTransaction saved = transactionRepository.save(transaction);
         return convertToDTO(saved);
     }
 
-    public List<UsageTransactionDTO> getTransactionsByStatus(TransactionStatus status) {
+    public List<UsageTransactionResponseDTO> getTransactionsByStatus(TransactionStatus status) {
         return transactionRepository.findByTransactionStatus(status).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public UsageTransactionDTO verifyTransaction(Integer id) {
+    public UsageTransactionResponseDTO verifyTransaction(Integer id) {
         UsageTransaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
         transaction.setTransactionStatus(TransactionStatus.VERIFIED);
@@ -63,8 +65,8 @@ public class UsageService {
         return convertToDTO(saved);
     }
 
-    private UsageTransactionDTO convertToDTO(UsageTransaction t) {
-        UsageTransactionDTO dto = new UsageTransactionDTO();
+    private UsageTransactionResponseDTO convertToDTO(UsageTransaction t) {
+        UsageTransactionResponseDTO dto = new UsageTransactionResponseDTO();
         dto.setId(t.getId());
         dto.setDigitalContentId(t.getDigitalContent().getId());
         dto.setDistributorId(t.getDistributor().getId());
@@ -73,6 +75,7 @@ public class UsageService {
         dto.setRevenueGenerated(t.getRevenueGenerated());
         dto.setTransactionDate(t.getTransactionDate());
         dto.setTransactionStatus(t.getTransactionStatus());
+        dto.setCreatedAt(t.getCreatedAt());
         return dto;
     }
 }

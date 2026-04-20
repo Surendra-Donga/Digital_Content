@@ -1,6 +1,7 @@
 package com.Digital_Content.Digital_Content_Rights.Controller;
 
-import com.Digital_Content.Digital_Content_Rights.DTO.DigitalContentDTO;
+import com.Digital_Content.Digital_Content_Rights.DTO.DigitalContentRequestDTO;
+import com.Digital_Content.Digital_Content_Rights.DTO.DigitalContentResponseDTO;
 import com.Digital_Content.Digital_Content_Rights.Service.ContentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,24 +20,29 @@ public class ContentController {
     private ContentService contentService;
 
     @GetMapping
-    public ResponseEntity<List<DigitalContentDTO>> getAllContent() {
+    public ResponseEntity<List<DigitalContentResponseDTO>> getAllContent() {
         return ResponseEntity.ok(contentService.getAllContent());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DigitalContentDTO> getContentById(@PathVariable Integer id) {
+    public ResponseEntity<DigitalContentResponseDTO> getContentById(@PathVariable Integer id) {
         return contentService.getContentById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ResponseEntity<DigitalContentDTO> registerContent(@Valid @RequestBody DigitalContentDTO contentDTO) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(contentService.registerContent(contentDTO));
+    @PostMapping("/draft")
+    public ResponseEntity<DigitalContentResponseDTO> createDraft(@Valid @RequestBody DigitalContentRequestDTO contentDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(contentService.createDraft(contentDTO));
+    }
+
+    @PutMapping("/{id}/register")
+    public ResponseEntity<DigitalContentResponseDTO> registerContent(@PathVariable Integer id) {
+        return ResponseEntity.ok(contentService.registerContent(id));
     }
 
     @PutMapping("/{id}/approve")
-    public ResponseEntity<DigitalContentDTO> approveContent(@PathVariable Integer id) {
+    public ResponseEntity<DigitalContentResponseDTO> approveContent(@PathVariable Integer id) {
         return ResponseEntity.ok(contentService.approveContent(id));
     }
 }
