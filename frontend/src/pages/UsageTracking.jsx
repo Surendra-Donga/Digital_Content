@@ -151,6 +151,9 @@ function UsageTracking() {
                       {t.transactionStatus === 'VERIFIED' && isAdmin && (
                         <button className="btn-approve" onClick={() => handleSettle(t.id)}>Settle</button>
                       )}
+                      {t.transactionStatus === 'SETTLED' && (
+                        <span className="badge badge-success">Setted</span>
+                      )}
                     </div>
                   </td>
                 </tr>
