@@ -86,8 +86,9 @@ function UsageTracking() {
     try {
       await usageService.verifyTransaction(id)
       loadData()
+      alert('Transaction verified successfully!')
     } catch (err) {
-      setError('Failed to verify transaction')
+      setError(err.response?.data?.message || 'Failed to verify transaction')
     }
   }
 
@@ -95,8 +96,9 @@ function UsageTracking() {
     try {
       await usageService.settleTransaction(id)
       loadData()
+      alert('Transaction settled successfully!')
     } catch (err) {
-      setError('Failed to settle transaction')
+      setError(err.response?.data?.message || 'Failed to settle transaction')
     }
   }
 
@@ -152,7 +154,7 @@ function UsageTracking() {
                         <button className="btn-approve" onClick={() => handleSettle(t.id)}>Settle</button>
                       )}
                       {t.transactionStatus === 'SETTLED' && (
-                        <span className="badge badge-success">Setted</span>
+                        <span className="badge badge-success">Settled</span>
                       )}
                     </div>
                   </td>

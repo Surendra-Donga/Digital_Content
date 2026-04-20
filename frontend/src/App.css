@@ -117,7 +117,9 @@ tr:hover {
   padding: 2rem;
   border-radius: 8px;
   width: 100%;
-  max-width: 500px;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow-y: auto;
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
