@@ -31,5 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
-.txt
-.png/jpg/jpeg
+
+# Ignore text files and images
+*.txt
+*.png
+*.jpg
+*.jpeg
+*.gif

@@ -1,0 +1,34 @@
+# Root .gitignore for Digital Content project
+
+# Ignore text files
+*.txt
+
+# Ignore images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+
+# Node/React
+node_modules/
+build/
+dist/
+
+# Maven/Java
+target/
+.mvn/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
