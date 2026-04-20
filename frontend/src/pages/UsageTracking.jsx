@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { usageService, contentService, userService } from '../services/apiService'
 import { formatDate, formatCurrency } from '../utils/helpers'
+import { AuthContext } from '../App'
 import './UsageTracking.css'
 
 function UsageTracking() {
+  const { userRole } = useContext(AuthContext)
   const [transactions, setTransactions] = useState([])
   const [content, setContent] = useState([])
   const [distributors, setDistributors] = useState([])
@@ -12,6 +14,9 @@ function UsageTracking() {
   const [showModal, setShowModal] = useState(false)
   const [activeTab, setActiveTab] = useState('RECORDED')
   
+  const isAdmin = userRole === 'ADMIN'
+  const isDistributor = userRole === 'DISTRIBUTOR' || isAdmin
+
   const [formData, setFormData] = useState({
     digitalContentId: '',
     distributorId: '',
@@ -52,7 +57,15 @@ function UsageTracking() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      await usageService.recordUsage(formData)
+      // Ensure numeric types and full ISO date string for backend
+      const submissionData = {
+        ...formData,
+        usageCount: parseInt(formData.usageCount, 10),
+        revenueGenerated: parseFloat(formData.revenueGenerated),
+        transactionDate: formData.transactionDate + 'T00:00:00' // Format as LocalDateTime
+      }
+      
+      await usageService.recordUsage(submissionData)
       setFormData({
         digitalContentId: '',
         distributorId: '',
@@ -63,8 +76,9 @@ function UsageTracking() {
       })
       setShowModal(false)
       loadData()
+      alert('Usage recorded successfully!')
     } catch (err) {
-      setError('Failed to record usage')
+      setError(err.response?.data?.message || 'Failed to record usage')
     }
   }
 
@@ -77,6 +91,15 @@ function UsageTracking() {
     }
   }
 
+  const handleSettle = async (id) => {
+    try {
+      await usageService.settleTransaction(id)
+      loadData()
+    } catch (err) {
+      setError('Failed to settle transaction')
+    }
+  }
+
   const getContentTitle = (id) => content.find(c => c.id === id)?.title || 'N/A'
   const getDistributorName = (id) => distributors.find(d => d.id === id)?.name || 'N/A'
 
@@ -86,7 +109,7 @@ function UsageTracking() {
     <div className="container">
       <div className="page-header">
         <h1>Usage Tracking</h1>
-        <button onClick={() => setShowModal(true)}>+ Record Usage</button>
+        {isDistributor && <button onClick={() => setShowModal(true)}>+ Record Usage</button>}
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -94,6 +117,7 @@ function UsageTracking() {
       <div className="tabs">
         <button className={`tab-btn ${activeTab === 'RECORDED' ? 'active' : ''}`} onClick={() => setActiveTab('RECORDED')}>Recorded</button>
         <button className={`tab-btn ${activeTab === 'VERIFIED' ? 'active' : ''}`} onClick={() => setActiveTab('VERIFIED')}>Verified</button>
+        <button className={`tab-btn ${activeTab === 'SETTLED' ? 'active' : ''}`} onClick={() => setActiveTab('SETTLED')}>Settled</button>
       </div>
 
       <div className="card">
@@ -120,9 +144,14 @@ function UsageTracking() {
                   <td>{formatCurrency(t.revenueGenerated)}</td>
                   <td>{formatDate(t.transactionDate)}</td>
                   <td>
-                    {t.transactionStatus === 'RECORDED' && (
-                      <button className="btn-approve" onClick={() => handleVerify(t.id)}>Verify</button>
-                    )}
+                    <div className="action-buttons">
+                      {t.transactionStatus === 'RECORDED' && isAdmin && (
+                        <button className="btn-approve" onClick={() => handleVerify(t.id)}>Verify</button>
+                      )}
+                      {t.transactionStatus === 'VERIFIED' && isAdmin && (
+                        <button className="btn-approve" onClick={() => handleSettle(t.id)}>Settle</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -143,8 +172,8 @@ function UsageTracking() {
               <div className="form-group">
                 <label>Content</label>
                 <select name="digitalContentId" value={formData.digitalContentId} onChange={handleInputChange} required>
-                  <option value="">Select Content</option>
-                  {content.filter(c => c.contentStatus === 'ACTIVE').map(c => (
+                  <option value="">Select Registered/Active Content</option>
+                  {content.filter(c => c.contentStatus !== 'DRAFT').map(c => (
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
@@ -164,15 +193,20 @@ function UsageTracking() {
                   <option value="STREAM">Stream</option>
                   <option value="DOWNLOAD">Download</option>
                   <option value="VIEW">View</option>
+                  <option value="SUBSCRIPTION_ACCESS">Subscription Access</option>
                 </select>
               </div>
               <div className="form-group">
                 <label>Usage Count</label>
-                <input type="number" name="usageCount" value={formData.usageCount} onChange={handleInputChange} required />
+                <input type="number" name="usageCount" value={formData.usageCount} onChange={handleInputChange} required min="1" />
               </div>
               <div className="form-group">
-                <label>Revenue Generated</label>
-                <input type="number" step="0.01" name="revenueGenerated" value={formData.revenueGenerated} onChange={handleInputChange} required />
+                <label>Revenue Generated ($)</label>
+                <input type="number" step="0.01" name="revenueGenerated" value={formData.revenueGenerated} onChange={handleInputChange} required min="0" />
+              </div>
+              <div className="form-group">
+                <label>Transaction Date</label>
+                <input type="date" name="transactionDate" value={formData.transactionDate} onChange={handleInputChange} required />
               </div>
               <button type="submit" className="btn-submit">Record Usage</button>
             </form>

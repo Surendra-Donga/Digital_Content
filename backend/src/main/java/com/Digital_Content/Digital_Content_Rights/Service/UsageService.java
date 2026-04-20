@@ -5,6 +5,7 @@ import com.Digital_Content.Digital_Content_Rights.DTO.UsageTransactionResponseDT
 import com.Digital_Content.Digital_Content_Rights.Entity.DigitalContent;
 import com.Digital_Content.Digital_Content_Rights.Entity.User;
 import com.Digital_Content.Digital_Content_Rights.Entity.UsageTransaction;
+import com.Digital_Content.Digital_Content_Rights.Enum.ContentStatus;
 import com.Digital_Content.Digital_Content_Rights.Enum.TransactionStatus;
 import com.Digital_Content.Digital_Content_Rights.Repository.DigitalContentRepository;
 import com.Digital_Content.Digital_Content_Rights.Repository.UserRepository;
@@ -35,6 +36,11 @@ public class UsageService {
         
         DigitalContent content = contentRepository.findById(dto.getDigitalContentId())
                 .orElseThrow(() -> new RuntimeException("Content not found"));
+        
+        if (content.getContentStatus() == ContentStatus.DRAFT) {
+            throw new RuntimeException("Content must be registered or active before recording usage");
+        }
+        
         User distributor = userRepository.findById(dto.getDistributorId())
                 .orElseThrow(() -> new RuntimeException("Distributor not found"));
         
@@ -67,6 +73,18 @@ public class UsageService {
         UsageTransaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
         transaction.setTransactionStatus(TransactionStatus.VERIFIED);
+        UsageTransaction saved = transactionRepository.save(transaction);
+        return convertToDTO(saved);
+    }
+
+    @Transactional
+    public UsageTransactionResponseDTO settleTransaction(Integer id) {
+        UsageTransaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+        if (transaction.getTransactionStatus() != TransactionStatus.VERIFIED) {
+            throw new RuntimeException("Only verified transactions can be settled");
+        }
+        transaction.setTransactionStatus(TransactionStatus.SETTLED);
         UsageTransaction saved = transactionRepository.save(transaction);
         return convertToDTO(saved);
     }

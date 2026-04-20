@@ -42,6 +42,16 @@ public class RightsService {
     public ContentRightsResponseDTO assignRights(ContentRightsRequestDTO dto) {
         DigitalContent content = contentRepository.findById(dto.getDigitalContentId())
                 .orElseThrow(() -> new RuntimeException("Content not found"));
+        
+        List<ContentRights> existingRights = rightsRepository.findByDigitalContent_Id(dto.getDigitalContentId());
+        java.math.BigDecimal totalPercentage = existingRights.stream()
+                .map(ContentRights::getOwnershipPercentage)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        
+        if (totalPercentage.add(dto.getOwnershipPercentage()).compareTo(new java.math.BigDecimal("100")) > 0) {
+            throw new RuntimeException("Total ownership percentage for this content cannot exceed 100%");
+        }
+
         User owner = userRepository.findById(dto.getRightsOwnerId())
                 .orElseThrow(() -> new RuntimeException("Owner not found"));
 

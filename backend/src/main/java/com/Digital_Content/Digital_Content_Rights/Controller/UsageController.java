@@ -39,4 +39,9 @@ public class UsageController {
     public ResponseEntity<UsageTransactionResponseDTO> verifyTransaction(@PathVariable Integer id) {
         return ResponseEntity.ok(usageService.verifyTransaction(id));
     }
+
+    @PutMapping("/{id}/settle")
+    public ResponseEntity<UsageTransactionResponseDTO> settleTransaction(@PathVariable Integer id) {
+        return ResponseEntity.ok(usageService.settleTransaction(id));
+    }
 }

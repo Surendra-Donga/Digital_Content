@@ -42,12 +42,8 @@ public class RoyaltyService {
         DigitalContent content = digitalContentRepository.findById(contentId)
                 .orElseThrow(() -> new RuntimeException("Content not found"));
 
-        List<UsageTransaction> transactions = usageTransactionRepository
-                .findByDigitalContent_IdAndTransactionStatus(contentId, TransactionStatus.VERIFIED);
-
-        BigDecimal totalRevenue = transactions.stream()
-                .map(UsageTransaction::getRevenueGenerated)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalRevenue = usageTransactionRepository.getTotalVerifiedRevenueByContentId(contentId);
+        if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 
         List<ContentRights> allRights = contentRightsRepository.findByDigitalContent_Id(contentId);
         List<RoyaltyCalculation> savedCalculations = new ArrayList<>();
@@ -64,7 +60,7 @@ public class RoyaltyService {
             calculation.setCalculatedAmount(amount);
             
             calculation.setCalculationDate(LocalDateTime.now());
-            calculation.setCalculationStatus(CalculationStatus.PENDING);
+            calculation.setCalculationStatus(CalculationStatus.CALCULATED);
             
             savedCalculations.add(royaltyCalculationRepository.save(calculation));
         }

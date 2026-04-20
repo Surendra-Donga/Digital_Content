@@ -32,7 +32,8 @@ export const usageService = {
   getAllTransactions: () => api.get('/usage'),
   getTransactionsByStatus: (status) => api.get(`/usage/status/${status}`),
   recordUsage: (data) => api.post('/usage', data),
-  verifyTransaction: (id) => api.put(`/usage/${id}/verify`)
+  verifyTransaction: (id) => api.put(`/usage/${id}/verify`),
+  settleTransaction: (id) => api.put(`/usage/${id}/settle`)
 }
 
 export const royaltyService = {

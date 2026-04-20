@@ -57,9 +57,12 @@ public class PaymentService {
         payment.setPaidAmount(request.getPaidAmount());
         payment.setPaymentReference(request.getPaymentReference());
         payment.setPaymentDate(LocalDateTime.now());
-        payment.setPaymentStatus(PaymentStatus.SUCCESS);
+        payment.setPaymentStatus(PaymentStatus.INITIATED);
 
-        return convertToDTO(paymentRepository.save(payment));
+        RoyaltyPayment saved = paymentRepository.save(payment);
+        // Simulate external payment processing
+        saved.setPaymentStatus(PaymentStatus.SUCCESS);
+        return convertToDTO(paymentRepository.save(saved));
     }
 
     private RoyaltyPaymentResponseDTO convertToDTO(RoyaltyPayment payment) {
