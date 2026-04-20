@@ -25,6 +25,11 @@ public class UsageController {
         return ResponseEntity.status(HttpStatus.CREATED).body(usageService.recordUsage(usageDTO));
     }
 
+    @GetMapping
+    public ResponseEntity<List<UsageTransactionResponseDTO>> getAllTransactions() {
+        return ResponseEntity.ok(usageService.getAllTransactions());
+    }
+
     @GetMapping("/status/{status}")
     public ResponseEntity<List<UsageTransactionResponseDTO>> getTransactionsByStatus(@PathVariable TransactionStatus status) {
         return ResponseEntity.ok(usageService.getTransactionsByStatus(status));

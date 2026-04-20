@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { contentService, userService, contentRightsService } from '../services/apiService'
 import { formatDate } from '../utils/helpers'
+import { AuthContext } from '../App'
 import './ContentManagement.css'
 
 function ContentManagement() {
+  const { userRole } = useContext(AuthContext)
   const [content, setContent] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -12,6 +14,9 @@ function ContentManagement() {
   const [showRightsModal, setShowRightsModal] = useState(false)
   const [selectedContentId, setSelectedContentId] = useState(null)
   
+  const isAdmin = userRole === 'ADMIN'
+  const isCreator = userRole === 'CREATOR' || isAdmin
+
   const [formData, setFormData] = useState({
     title: '',
     contentType: 'MUSIC',
@@ -45,7 +50,6 @@ function ContentManagement() {
       setError(null)
     } catch (err) {
       setError('Failed to load data')
-      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -122,7 +126,7 @@ function ContentManagement() {
     <div className="container">
       <div className="page-header">
         <h1>Content Management</h1>
-        <button onClick={() => setShowModal(true)}>+ Create Draft</button>
+        {isCreator && <button onClick={() => setShowModal(true)}>+ Create Draft</button>}
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -148,13 +152,15 @@ function ContentManagement() {
                   <td><span className={`badge badge-${item.contentStatus?.toLowerCase()}`}>{item.contentStatus}</span></td>
                   <td>
                     <div className="action-buttons">
-                      {item.contentStatus === 'DRAFT' && (
+                      {item.contentStatus === 'DRAFT' && isCreator && (
                         <button className="btn-edit" onClick={() => handleRegister(item.id)}>Register</button>
                       )}
-                      {item.contentStatus === 'REGISTERED' && (
+                      {item.contentStatus === 'REGISTERED' && isAdmin && (
                         <button className="btn-approve" onClick={() => handleApprove(item.id)}>Approve</button>
                       )}
-                      <button className="btn-rights" onClick={() => handleOpenRights(item.id)}>Manage Rights</button>
+                      {isAdmin && (
+                        <button className="btn-rights" onClick={() => handleOpenRights(item.id)}>Manage Rights</button>
+                      )}
                     </div>
                   </td>
                 </tr>

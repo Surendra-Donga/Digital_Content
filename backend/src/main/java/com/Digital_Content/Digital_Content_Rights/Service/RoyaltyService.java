@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,12 @@ public class RoyaltyService {
 
     @Autowired
     private DigitalContentRepository digitalContentRepository;
+
+    public List<RoyaltyCalculationResponseDTO> getAllCalculations() {
+        return royaltyCalculationRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     @Transactional
     public List<RoyaltyCalculationResponseDTO> calculateRoyalty(Integer contentId) {
@@ -53,7 +60,7 @@ public class RoyaltyService {
             calculation.setRoyaltyPercentage(rights.getOwnershipPercentage());
             
             BigDecimal amount = totalRevenue.multiply(rights.getOwnershipPercentage())
-                    .divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
             calculation.setCalculatedAmount(amount);
             
             calculation.setCalculationDate(LocalDateTime.now());

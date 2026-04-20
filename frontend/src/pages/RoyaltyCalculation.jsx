@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { royaltyService, contentService, paymentService, userService } from '../services/apiService'
 import { formatDate, formatCurrency, formatPercentage } from '../utils/helpers'
+import { AuthContext } from '../App'
 import './RoyaltyCalculation.css'
 
 function RoyaltyCalculation() {
+  const { userRole } = useContext(AuthContext)
   const [calculations, setCalculations] = useState([])
   const [payments, setPayments] = useState([])
   const [content, setContent] = useState([])
@@ -13,6 +15,8 @@ function RoyaltyCalculation() {
   const [activeTab, setActiveTab] = useState('calculations')
   const [selectedContent, setSelectedContent] = useState('')
   
+  const isAdmin = userRole === 'ADMIN'
+
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [paymentFormData, setPaymentFormData] = useState({
     royaltyCalculationId: '',
@@ -27,13 +31,13 @@ function RoyaltyCalculation() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [payRes, contentRes, usersRes] = await Promise.all([
+      const [calcRes, payRes, contentRes, usersRes] = await Promise.all([
+        royaltyService.getAllCalculations().catch(() => ({ data: [] })),
         paymentService.getAllPayments().catch(() => ({ data: [] })),
         contentService.getAllContent().catch(() => ({ data: [] })),
         userService.getAllUsers().catch(() => ({ data: [] }))
       ])
-      // We don't have a "get all calculations" endpoint in the new backend
-      // Calculations are usually fetched per content or we can manage them locally after creation
+      setCalculations(calcRes.data)
       setPayments(payRes.data)
       setContent(contentRes.data)
       setUsers(usersRes.data)
@@ -60,7 +64,6 @@ function RoyaltyCalculation() {
     try {
       await royaltyService.approveCalculation(calcId)
       loadData()
-      // Refresh current calculations list
       setCalculations(prev => prev.map(c => c.id === calcId ? {...c, calculationStatus: 'APPROVED'} : c))
     } catch (err) {
       setError('Failed to approve calculation')
@@ -120,7 +123,11 @@ function RoyaltyCalculation() {
               ))}
             </select>
           </div>
-          <button onClick={() => handleCalculateRoyalty(selectedContent)} disabled={!selectedContent} className="btn-calculate">Run Calculation</button>
+          {isAdmin ? (
+            <button onClick={() => handleCalculateRoyalty(selectedContent)} disabled={!selectedContent} className="btn-calculate">Run Calculation</button>
+          ) : (
+            <p className="no-data">Only Admins can run calculations.</p>
+          )}
         </div>
       )}
 
@@ -150,10 +157,10 @@ function RoyaltyCalculation() {
                     <td><span className={`badge badge-${calc.calculationStatus.toLowerCase()}`}>{calc.calculationStatus}</span></td>
                     <td>
                       <div className="action-buttons">
-                        {calc.calculationStatus === 'PENDING' && (
+                        {calc.calculationStatus === 'PENDING' && isAdmin && (
                           <button className="btn-approve" onClick={() => handleApproveCalculation(calc.id)}>Approve</button>
                         )}
-                        {calc.calculationStatus === 'APPROVED' && (
+                        {calc.calculationStatus === 'APPROVED' && isAdmin && (
                           <button className="btn-edit" onClick={() => handleOpenPayment(calc)}>Pay</button>
                         )}
                       </div>

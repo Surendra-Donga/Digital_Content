@@ -41,10 +41,8 @@ public class PaymentService {
             throw new RuntimeException("Calculation must be approved before payment");
         }
 
-        List<RoyaltyPayment> previousPayments = paymentRepository.findAll().stream()
-                .filter(p -> p.getRoyaltyCalculation().getId().equals(request.getRoyaltyCalculationId()) 
-                          && p.getPaymentStatus() == PaymentStatus.SUCCESS)
-                .collect(Collectors.toList());
+        List<RoyaltyPayment> previousPayments = paymentRepository
+                .findByRoyaltyCalculation_IdAndPaymentStatus(request.getRoyaltyCalculationId(), PaymentStatus.SUCCESS);
 
         BigDecimal totalPaid = previousPayments.stream()
                 .map(RoyaltyPayment::getPaidAmount)

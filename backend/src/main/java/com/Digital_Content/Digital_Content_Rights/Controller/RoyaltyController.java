@@ -16,6 +16,11 @@ public class RoyaltyController {
     @Autowired
     private RoyaltyService royaltyService;
 
+    @GetMapping("/calculations")
+    public ResponseEntity<List<RoyaltyCalculationResponseDTO>> getAllCalculations() {
+        return ResponseEntity.ok(royaltyService.getAllCalculations());
+    }
+
     @PostMapping("/calculate/{contentId}")
     public ResponseEntity<List<RoyaltyCalculationResponseDTO>> calculateRoyalty(@PathVariable Integer contentId) {
         return ResponseEntity.ok(royaltyService.calculateRoyalty(contentId));

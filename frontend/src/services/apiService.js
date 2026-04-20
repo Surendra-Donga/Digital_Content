@@ -29,12 +29,14 @@ export const contentRightsService = {
 }
 
 export const usageService = {
+  getAllTransactions: () => api.get('/usage'),
   getTransactionsByStatus: (status) => api.get(`/usage/status/${status}`),
   recordUsage: (data) => api.post('/usage', data),
   verifyTransaction: (id) => api.put(`/usage/${id}/verify`)
 }
 
 export const royaltyService = {
+  getAllCalculations: () => api.get('/royalty/calculations'),
   calculateRoyalty: (contentId) => api.post(`/royalty/calculate/${contentId}`),
   approveCalculation: (id) => api.put(`/royalty/approve/${id}`)
 }

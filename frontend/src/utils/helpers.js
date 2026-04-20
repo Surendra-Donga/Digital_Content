@@ -17,7 +17,7 @@ export const formatCurrency = (amount) => {
 
 export const formatPercentage = (value) => {
   if (!value) return '0%'
-  return `${(value * 100).toFixed(2)}%`
+  return `${value}%`
 }
 
 export const getStatusBadgeClass = (status) => {

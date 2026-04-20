@@ -50,6 +50,12 @@ public class UsageService {
         return convertToDTO(saved);
     }
 
+    public List<UsageTransactionResponseDTO> getAllTransactions() {
+        return transactionRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public List<UsageTransactionResponseDTO> getTransactionsByStatus(TransactionStatus status) {
         return transactionRepository.findByTransactionStatus(status).stream()
                 .map(this::convertToDTO)
