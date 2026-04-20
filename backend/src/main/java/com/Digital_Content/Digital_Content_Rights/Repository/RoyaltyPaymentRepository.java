@@ -1,4 +1,4 @@
-package com.Digital_Content.Digital_Content_Rights.Repositorys;
+package com.Digital_Content.Digital_Content_Rights.Repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
